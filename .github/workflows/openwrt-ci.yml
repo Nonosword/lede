@@ -120,7 +120,7 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_$DEVICE
           cat device_$DEVICE > .config
-          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_subnet
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
           cat config_subnet >> .config
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_subnet.sh
           chmod +x ./patches_subnet.sh
