@@ -47,8 +47,8 @@ permissions:
 
 jobs:
 
-  build_packages:
-    
+  build_openwrt:
+
     name: Build ${{ github.event.inputs.device }}_${{ github.event.inputs.kernal }}
     runs-on: ubuntu-latest
     env:
@@ -58,7 +58,6 @@ jobs:
       WORKCHAIN: ${{ github.event.inputs.workchain }}
 
     steps:
-
       - name: Space cleanup and Initialization environment
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -69,10 +68,11 @@ jobs:
           sudo -E apt update
           sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
           sudo -E apt -y full-upgrade
-          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+          sudo -E apt -y install ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
           sudo -E systemctl daemon-reload
           sudo -E apt -y autoremove --purge
           sudo -E apt clean
+          sudo -E pip install pyelftools
           sudo -E timedatectl set-timezone "Asia/Shanghai"
 
       - name: Checkout OpenWrt
@@ -84,7 +84,7 @@ jobs:
           cat extra_feeds >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-        
+
       - name: Fetch library configuration 1
         if: ${{ github.event.inputs.workchain == 'Generic' }}
         run: |
@@ -98,7 +98,7 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           chmod +x ./device_patches_$DEVICE.sh
           ./device_patches_$DEVICE.sh
-          
+
       - name: Fetch library configuration 2
         if: ${{ github.event.inputs.workchain == 'MainNet' }}
         run: |
@@ -112,7 +112,7 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           chmod +x ./device_patches_$DEVICE.sh
           ./device_patches_$DEVICE.sh
-          
+
       - name: Fetch library configuration 3
         if: ${{ github.event.inputs.workchain == 'SubNet' }}
         run: |
@@ -126,18 +126,18 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           chmod +x ./device_patches_$DEVICE.sh
           ./device_patches_$DEVICE.sh
-          
+
       - name: Enable Testing Kernal
         if: ${{ github.event.inputs.kernal == 'testing_kernel' }}
         run: |
             echo 'CONFIG_TESTING_KERNEL=y' >> .config
-            
+
       - name: Generate configuration file
         run: |
             sed -i 's/^[ \t]*//g' ./.config
             cat .config
             make defconfig
-            
+
       - name: Download packages
         run: make download -j16
 
@@ -160,15 +160,15 @@ jobs:
           rm -rf $(find ./bin/targets/ -type d -name "packages")
           cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
-          
+
       - name: Get current date
         run: echo "today=$(date +'%Y%m%d')" >> $GITHUB_ENV
-        
+
       - name: Read kernel version
         run: |
           grep 'CONFIG_LINUX_' .config
           echo "vKERNEL=$(grep 'CONFIG_LINUX_' .config | cut -d'_' -f 3,4 | cut -d'=' -f 1)" >> $GITHUB_ENV
-          
+
       - name: Upload buildinfo
         uses: actions/upload-artifact@v3
         with:
