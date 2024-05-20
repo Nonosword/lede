@@ -76,7 +76,7 @@ jobs:
           sudo -E timedatectl set-timezone "Asia/Shanghai"
 
       - name: Checkout OpenWrt
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update feeds
         run: |
@@ -170,19 +170,19 @@ jobs:
           echo "vKERNEL=$(grep 'CONFIG_LINUX_' .config | cut -d'_' -f 3,4 | cut -d'=' -f 1)" >> $GITHUB_ENV
 
       - name: Upload buildinfo
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Buildinfo_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./artifact/buildinfo/
 
       - name: Upload package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Package_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./artifact/package/
 
       - name: Upload firmware
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Firmware_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./bin/targets/
