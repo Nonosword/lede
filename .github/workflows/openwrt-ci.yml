@@ -8,8 +8,38 @@
 name: OpenWrt-CI
 
 on:
-  schedule:
-    - cron: 0 20 * * *
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      device:
+        type: choice
+        description: 'select device to build'
+        options:
+        - r4s
+        - x86_x64
+        default: 'r4s'
+        required: false
+      kernal:
+        type: choice
+        description: 'select kernal type'
+        options:
+        - regular_kernel
+        - testing_kernel
+        default: 'regular_kernel'
+        required: false
+      workchain:
+        type: choice
+        description: 'select work path'
+        options:
+        - Generic
+        - MainNet
+        - SubNet
+        default: 'MainNet'
+        required: false
+      branch:
+        description: 'select openwrt branch'
+        default: 'master'
+        required: false
 
 permissions:
   contents: read
@@ -18,9 +48,13 @@ jobs:
 
   build_openwrt:
 
-    name: Build OpenWrt Firmware
-
+    name: Build ${{ github.event.inputs.device }}_${{ github.event.inputs.kernal }}
     runs-on: ubuntu-22.04
+    env:
+      DEVICE: ${{ github.event.inputs.device }}
+      KERNAL: ${{ github.event.inputs.kernal }}
+      BRANCH: ${{ github.event.inputs.branch }}
+      WORKCHAIN: ${{ github.event.inputs.workchain }}
 
     steps:
       - name: Space cleanup and Initialization environment
@@ -44,12 +78,61 @@ jobs:
 
       - name: Update feeds
         run: |
-          sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/extra_feeds
+          cat extra_feeds >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
+      - name: Fetch library configuration 1
+        if: ${{ github.event.inputs.workchain == 'Generic' }}
+        run: |
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_$DEVICE
+          cat device_$DEVICE > .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
+          cat config_generic >> .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_generic.sh
+          chmod +x ./patches_generic.sh
+          ./patches_main.sh
+          # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
+          # chmod +x ./device_patches_$DEVICE.sh
+          # ./device_patches_$DEVICE.sh
+      - name: Fetch library configuration 2
+        if: ${{ github.event.inputs.workchain == 'MainNet' }}
+        run: |
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_$DEVICE
+          cat device_$DEVICE > .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
+          cat config_generic >> .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_main.sh
+          chmod +x ./patches_main.sh
+          ./patches_main.sh
+          # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
+          # chmod +x ./device_patches_$DEVICE.sh
+          # ./device_patches_$DEVICE.sh
+      - name: Fetch library configuration 3
+        if: ${{ github.event.inputs.workchain == 'SubNet' }}
+        run: |
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_$DEVICE
+          cat device_$DEVICE > .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
+          cat config_subnet >> .config
+          wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_subnet.sh
+          chmod +x ./patches_subnet.sh
+          ./patches_subnet.sh
+          # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
+          # chmod +x ./device_patches_$DEVICE.sh
+          # ./device_patches_$DEVICE.sh
+
+      - name: Enable Testing Kernal
+        if: ${{ github.event.inputs.kernal == 'testing_kernel' }}
+        run: |
+            echo 'CONFIG_TESTING_KERNEL=y' >> .config
+
       - name: Generate configuration file
-        run: make defconfig
+        run: |
+            sed -i 's/^[ \t]*//g' ./.config
+            cat .config
+            make defconfig
 
       - name: Download packages
         run: make download -j16
@@ -74,20 +157,28 @@ jobs:
           cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
 
+      - name: Get current date
+        run: echo "today=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - name: Read kernel version
+        run: |
+          grep 'CONFIG_LINUX_' .config
+          echo "vKERNEL=$(grep 'CONFIG_LINUX_' .config | cut -d'_' -f 3,4 | cut -d'=' -f 1)" >> $GITHUB_ENV
+
       - name: Upload buildinfo
         uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_buildinfo
+          name: Buildinfo_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./artifact/buildinfo/
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_package
+          name: Package_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./artifact/package/
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_firmware
+          name: Firmware_${{ github.event.inputs.device }}_${{ github.event.inputs.workchain }}_${{ env.vKERNEL }}_${{ env.today }}
           path: ./bin/targets/
