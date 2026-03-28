@@ -92,8 +92,8 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
           cat config_generic >> .config
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_$WORKCHAIN.sh
-          chmod +x ./patches_generic.sh
-          ./patches_main.sh
+          chmod +x ./patches_$WORKCHAIN.sh
+          ./patches_$WORKCHAIN.sh
           # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           # chmod +x ./device_patches_$DEVICE.sh
           # ./device_patches_$DEVICE.sh
@@ -105,8 +105,8 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
           cat config_generic >> .config
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_$WORKCHAIN.sh
-          chmod +x ./patches_main.sh
-          ./patches_main.sh
+          chmod +x ./patches_$WORKCHAIN.sh
+          ./patches_$WORKCHAIN.sh
           # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           # chmod +x ./device_patches_$DEVICE.sh
           # ./device_patches_$DEVICE.sh
@@ -118,8 +118,8 @@ jobs:
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/config_generic
           cat config_subnet >> .config
           wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/patches_$WORKCHAIN.sh
-          chmod +x ./patches_subnet.sh
-          ./patches_subnet.sh
+          chmod +x ./patches_$WORKCHAIN.sh
+          ./patches_$WORKCHAIN.sh
           # wget https://raw.githubusercontent.com/Nonosword/library/main/openwrt/device_patches_$DEVICE.sh
           # chmod +x ./device_patches_$DEVICE.sh
           # ./device_patches_$DEVICE.sh
