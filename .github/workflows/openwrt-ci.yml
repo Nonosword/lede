@@ -136,7 +136,9 @@ jobs:
             make defconfig
 
       - name: Download packages
-        run: make download -j16
+        run: |
+            cat .config
+            make download -j16
 
       - name: Compile firmware
         run: |
